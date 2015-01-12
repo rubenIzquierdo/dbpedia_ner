@@ -4,6 +4,7 @@ from KafNafParserPy import *
 import sys
 from urllib2 import Request, urlopen
 from urllib import urlencode
+import argparse
 from lxml import etree
 
 DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
@@ -82,7 +83,16 @@ def load_entities_into_object(naf_obj, dbpedia_xml_results):
     
               
 if __name__ == '__main__':
-
+    parser_opts = argparse.ArgumentParser(description='Calls to DBPEDIA spotlight online to extract entities and the links to DBPEDIA',
+                                          usage='cat myfile.naf | '+sys.argv[0]+' [OPTIONS]')
+    parser_opts.add_argument('-url', dest='dbpedia_url',default=DBPEDIA_REST, help='URL of the DBPEDIA rest webservice, by default:'+DBPEDIA_REST)
+    parser_opts.add_argument('-c', dest='confidence', type=float,default=0.5, help='Minimum confidence of candidates for the DBPEDIA links')
+    
+    args = parser_opts.parse_args()
+    
+    if sys.stdin.isatty():
+        parser_opts.print_help()
+        sys.exit(-1)
     #################################
     # Get the raw text from the input file#
     #################################
