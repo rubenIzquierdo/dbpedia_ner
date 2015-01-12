@@ -1,15 +1,24 @@
 #!/usr/bin/env python
 
 from KafNafParserPy import *
-import sys
 from urllib2 import Request, urlopen
 from urllib import urlencode
-import argparse
 from lxml import etree
+import sys
+import os
+import argparse
+
+############# CHANGES #################################
+# 0.1 (9-jan-2015) --> first working version
+# 0.2 (12-jan-2015) --> included KAF/NAF headers
+#######################################################
 
 DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
+os.environ['LC_ALL'] = 'en_US.UTF-8'
+__this_name__ = 'dbpedia_spotlight_cltl'
+__this_version__ = '0.2'
 
-def call_dbpedia_rest_service(this_text,confidence=0.5):
+def call_dbpedia_rest_service(this_text,url,confidence):
     #curl http://spotlight.sztaki.hu:2222/rest/candidates --data-urlencode "text=$text" \ --data "confidence=0.5" --data "support=20"
     my_data = {}
     my_data['text'] = this_text.encode('utf-8')
@@ -79,6 +88,13 @@ def load_entities_into_object(naf_obj, dbpedia_xml_results):
         
         naf_obj.add_entity(new_entity)
     
+    my_lp = Clp()
+    my_lp.set_name(__this_name__)   
+    my_lp.set_version(__this_version__)
+    my_lp.set_timestamp()
+    
+    naf_obj.add_linguistic_processor('entities',my_lp)
+    
     
     
               
@@ -93,8 +109,9 @@ if __name__ == '__main__':
     if sys.stdin.isatty():
         parser_opts.print_help()
         sys.exit(-1)
+        
     #################################
-    # Get the raw text from the input file#
+    # 1.- Get the raw text from the input file#
     #################################
 
     whole_text = '' #will be unicode
@@ -110,17 +127,18 @@ if __name__ == '__main__':
     #################################
     
     #################################
-    # Call to the REST service
+    # 2.- Call to the REST service
     #################################
-    dbpedia_xml_results = call_dbpedia_rest_service(whole_text)
+    dbpedia_xml_results = call_dbpedia_rest_service(whole_text,args.dbpedia_url,args.confidence)
+
     #################################
-    # Add the entities and dbpedia links to the object (passed by reference)
+    # 3.- Add the entities and dbpedia links to the object (passed by reference)
     #################################
     load_entities_into_object(parser, dbpedia_xml_results)
     
     
     #################################
-    # Dump the result
+    # 4.- Dump the result
     #################################
     parser.dump()
 
