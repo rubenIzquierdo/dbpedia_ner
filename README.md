@@ -21,17 +21,7 @@ cat example.naf | python dbpedia_ner.py
 
 You can see the parameters of the script by calling to it with the `-h` parameter:
 ```shell
-# python dbpedia_ner.py 
-usage: cat myfile.naf | ./dbpedia_ner.py [OPTIONS]
-
-Calls to DBPEDIA spotlight online to extract entities and the links to DBPEDIA
-
-optional arguments:
-  -h, --help        show this help message and exit
-  -url DBPEDIA_URL  URL of the DBPEDIA rest webservice, by
-                    default:http://spotlight.sztaki.hu:2222/rest/candidates
-  -c CONFIDENCE     Minimum confidence of candidates for the DBPEDIA links
-(python2.7)rubens:dbpedia_ner ruben$ dbpedia_ner.py -h
+python dbpedia_ner.py -h
 usage: cat myfile.naf | ./dbpedia_ner.py [OPTIONS]
 
 Calls to DBPEDIA spotlight online to extract entities and the links to DBPEDIA
@@ -41,9 +31,13 @@ optional arguments:
   -url DBPEDIA_URL  URL of the DBPEDIA rest webservice, by
                     default: http://spotlight.sztaki.hu:2222/rest/candidates
   -c CONFIDENCE     Minimum confidence of candidates for the DBPEDIA links
+  -re, --remove-entities
+                        Remove the entities already existing in the input (if
+                        any)
 ```
 
-There are just two optional parameters, the URL to the REST endpoint of the dbpedia webservice, and the minimum confidence allowed for the candidates for dbpedia links.
+There are three optional parameters, the URL to the REST endpoint of the dbpedia webservice, and the minimum confidence allowed for the candidates for dbpedia links.
+The `-re` or `--remove-entities` allows you to remove any existing entity in the input (these entities will be removed just from the output, not from the real input object)
 
 ##Contact##
 * Ruben Izquierdo

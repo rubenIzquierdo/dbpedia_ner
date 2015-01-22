@@ -11,12 +11,13 @@ import argparse
 ############# CHANGES #################################
 # 0.1 (9-jan-2015) --> first working version
 # 0.2 (12-jan-2015) --> included KAF/NAF headers
+# 0.3 (22-jan-2015) --> included parameter to ignore the entities already existing in the input object
 #######################################################
 
 DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
 os.environ['LC_ALL'] = 'en_US.UTF-8'
 __this_name__ = 'dbpedia_spotlight_cltl'
-__this_version__ = '0.2'
+__this_version__ = '0.3'
 
 def call_dbpedia_rest_service(this_text,url,confidence):
     #curl http://spotlight.sztaki.hu:2222/rest/candidates --data-urlencode "text=$text" \ --data "confidence=0.5" --data "support=20"
@@ -32,6 +33,14 @@ def call_dbpedia_rest_service(this_text,url,confidence):
     return dbpedia_xml_results
 
 
+def get_id_not_used(used_ids):
+    n = 1
+    while True:
+        possible_id = 'e'+str(n)
+        if possible_id not in used_ids:
+            return possible_id
+        n += 1
+
 def load_entities_into_object(naf_obj, dbpedia_xml_results):
     term_for_token = {}
     for term in naf_obj.get_terms():
@@ -46,7 +55,10 @@ def load_entities_into_object(naf_obj, dbpedia_xml_results):
             term_for_offset[o+n] = term_for_token[token.get_id()]
 
     spot = etree.fromstring(dbpedia_xml_results)
-    num_e = 1
+    used_ids = set()
+    for existing_entity in naf_obj.get_entities():
+        used_ids.add(existing_entity.get_id())
+        
     for surface_form in spot.findall('surfaceForm'):
         text = surface_form.get('name')
         begin = int(surface_form.get('offset'))
@@ -59,8 +71,9 @@ def load_entities_into_object(naf_obj, dbpedia_xml_results):
                 if new_id not in term_ids:
                     term_ids.append(new_id)
         new_entity = Centity()
-        new_entity.set_id('e'+str(num_e))
-        num_e += 1
+        new_id = get_id_not_used(used_ids)
+        new_entity.set_id(new_id)
+        used_ids.add(new_id)
         new_entity.set_comment(text)
         
         ref = Creferences()
@@ -103,7 +116,7 @@ if __name__ == '__main__':
                                           usage='cat myfile.naf | '+sys.argv[0]+' [OPTIONS]')
     parser_opts.add_argument('-url', dest='dbpedia_url',default=DBPEDIA_REST, help='URL of the DBPEDIA rest webservice, by default:'+DBPEDIA_REST)
     parser_opts.add_argument('-c', dest='confidence', type=float,default=0.5, help='Minimum confidence of candidates for the DBPEDIA links')
-    
+    parser_opts.add_argument('-re','--remove-entities', dest='remove_entities', action='store_true',help='Remove the entities already existing in the input (if any)')
     args = parser_opts.parse_args()
     
     if sys.stdin.isatty():
@@ -116,6 +129,8 @@ if __name__ == '__main__':
 
     whole_text = '' #will be unicode
     parser = KafNafParser(sys.stdin)
+    if args.remove_entities:
+        parser.remove_entity_layer()
     prev = None
     for token in parser.get_tokens():
         t = token.get_text()
