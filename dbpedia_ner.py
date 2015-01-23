@@ -12,17 +12,19 @@ import argparse
 # 0.1 (9-jan-2015) --> first working version
 # 0.2 (12-jan-2015) --> included KAF/NAF headers
 # 0.3 (22-jan-2015) --> included parameter to ignore the entities already existing in the input object
+# 0.4 (23-jan-2015) --> fixed problem with tokenisation in case of <wf>World</wf> <wf>'s</wf> the NAF offset represents World's and not World 's
 #######################################################
 
 DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
 os.environ['LC_ALL'] = 'en_US.UTF-8'
 __this_name__ = 'dbpedia_spotlight_cltl'
-__this_version__ = '0.3'
+__this_version__ = '0.4'
 
 def call_dbpedia_rest_service(this_text,url,confidence):
     #curl http://spotlight.sztaki.hu:2222/rest/candidates --data-urlencode "text=$text" \ --data "confidence=0.5" --data "support=20"
     my_data = {}
     my_data['text'] = this_text.encode('utf-8')
+
     my_data['confidence'] = confidence
     my_data['support'] = '20'
     
@@ -48,12 +50,13 @@ def load_entities_into_object(naf_obj, dbpedia_xml_results):
             term_for_token[token_id] = term.get_id()
     
     term_for_offset = {}
+    current_offset = 0
     for token in naf_obj.get_tokens():
         t = token.get_text()
-        o = int(token.get_offset())
         for n in range(len(t)):
-            term_for_offset[o+n] = term_for_token[token.get_id()]
-
+            term_for_offset[n+current_offset] = term_for_token[token.get_id()]
+        current_offset = current_offset + len(t) + 1
+    
     spot = etree.fromstring(dbpedia_xml_results)
     used_ids = set()
     for existing_entity in naf_obj.get_entities():
@@ -137,6 +140,7 @@ if __name__ == '__main__':
         s = token.get_sent()
         if prev != None and s != prev:
             whole_text = whole_text.strip()+'\n'
+        
         whole_text+=t+' '
         prev = s
     #################################
