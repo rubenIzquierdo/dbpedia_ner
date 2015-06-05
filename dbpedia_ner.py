@@ -15,7 +15,12 @@ import argparse
 # 0.4 (23-jan-2015) --> fixed problem with tokenisation in case of <wf>World</wf> <wf>'s</wf> the NAF offset represents World's and not World 's
 #######################################################
 
-DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
+#DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
+#REFERENCE_DBPEDIA = 'http://dbpedia.org/resource'
+
+DBPEDIA_REST = 'http://localhost:2222/rest/candidates'
+REFERENCE_DBPEDIA = 'http://nl.dbpedia.org/resource'
+
 os.environ['LC_ALL'] = 'en_US.UTF-8'
 __this_name__ = 'dbpedia_spotlight_cltl'
 __this_version__ = '0.4'
@@ -26,12 +31,14 @@ def call_dbpedia_rest_service(this_text,url,confidence):
     my_data['text'] = this_text.encode('utf-8')
 
     my_data['confidence'] = confidence
-    my_data['support'] = '20'
+    my_data['support'] = '0' #how prominent is this entity, i.e. number of inlinks in Wikipedia;
     
     req = Request(DBPEDIA_REST, data = urlencode(my_data))
+    req.add_header('Accept',' text/xml')
     handler = urlopen(req)
     dbpedia_xml_results = handler.read()
     handler.close()
+    #print dbpedia_xml_results
     return dbpedia_xml_results
 
 
@@ -51,10 +58,15 @@ def load_entities_into_object(naf_obj, dbpedia_xml_results):
     
     term_for_offset = {}
     current_offset = 0
+    prv = None
     for token in naf_obj.get_tokens():
         t = token.get_text()
         for n in range(len(t)):
-            term_for_offset[n+current_offset] = term_for_token[token.get_id()]
+            if token.get_id() in term_for_token:
+                term_for_offset[n+current_offset] = term_for_token[token.get_id()]
+            else:
+                term_for_offset[n+current_offset] = prv
+            prv = term_for_offset[n+current_offset]
         current_offset = current_offset + len(t) + 1
     
     spot = etree.fromstring(dbpedia_xml_results)
@@ -88,7 +100,7 @@ def load_entities_into_object(naf_obj, dbpedia_xml_results):
             uri = resource.get('uri')
             conf = resource.get('contextualScore')
             resource_str = 'spotlight_cltl'
-            reference = 'http://dbpedia.org/resource/'+uri
+            reference = REFERENCE_DBPEDIA+'/'+uri
             ext_ref = CexternalReference()
             ext_ref.set_resource(resource_str)
             ext_ref.set_reference(reference)
