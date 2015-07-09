@@ -15,11 +15,11 @@ import argparse
 # 0.4 (23-jan-2015) --> fixed problem with tokenisation in case of <wf>World</wf> <wf>'s</wf> the NAF offset represents World's and not World 's
 #######################################################
 
-#DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
-#REFERENCE_DBPEDIA = 'http://dbpedia.org/resource'
+DBPEDIA_REST = 'http://spotlight.sztaki.hu:2222/rest/candidates'
+REFERENCE_DBPEDIA = 'http://dbpedia.org/resource'
 
-DBPEDIA_REST = 'http://localhost:2222/rest/candidates'
-REFERENCE_DBPEDIA = 'http://nl.dbpedia.org/resource'
+#DBPEDIA_REST = 'http://localhost:2222/rest/candidates'
+#REFERENCE_DBPEDIA = 'http://nl.dbpedia.org/resource'
 
 os.environ['LC_ALL'] = 'en_US.UTF-8'
 __this_name__ = 'dbpedia_spotlight_cltl'
@@ -33,7 +33,7 @@ def call_dbpedia_rest_service(this_text,url,confidence):
     my_data['confidence'] = confidence
     my_data['support'] = '0' #how prominent is this entity, i.e. number of inlinks in Wikipedia;
     
-    req = Request(DBPEDIA_REST, data = urlencode(my_data))
+    req = Request(url, data = urlencode(my_data))
     req.add_header('Accept',' text/xml')
     handler = urlopen(req)
     dbpedia_xml_results = handler.read()
